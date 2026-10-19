@@ -1,0 +1,78 @@
+.signin-page-canvas {
+  background-image: url('https://images.unsplash.com/photo-1619607146034-5a05296c8f9a?q=80&w=987&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D'); 
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+}
+
+.signin-page-canvas::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.4); 
+  z-index: 1;
+}
+
+.signin-card-shell {
+  position: relative;
+  z-index: 2;
+  width: 90%;
+  max-width: 480px;
+  background-color: #ffffff;
+  border-radius: 24px;
+  padding: 2.5rem 2rem;
+  box-shadow: 0 15px 35px rgba(255, 105, 180, 0.2);
+  text-align: center;
+}
+
+.signin-main-title {
+  color: #ff69b4;
+  font-weight: 800;
+  font-size: 2.2rem;
+  margin-bottom: 0.5rem;
+  line-height: 1.2;
+}
+
+.signin-sub-title {
+  color: #6c757d;
+  font-size: 1rem;
+  font-weight: 500;
+  margin-bottom: 2rem;
+}
+
+.btn-google-login {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 24px;
+  background-color: #ffffff;
+  color: #495057;
+  border: 2px solid #e9ecef;
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 1.05rem;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.btn-google-login:hover {
+  background-color: #fff0f5;
+  border-color: #ff69b4;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(255, 105, 180, 0.15);
+}
