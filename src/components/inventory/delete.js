@@ -38,7 +38,7 @@ const ItemDelete = () => {
       const docRef = doc(db, "inventory", id);
       await deleteDoc(docRef); 
       console.log("Item deleted successfully!");
-      navigate('/');
+      navigate('/inventory');
     } catch (error) {
       console.error("Error deleting item:", error);
     }
@@ -85,7 +85,7 @@ const ItemDelete = () => {
               
               <Button  
                 type="button" 
-                onClick={() => navigate('/')} 
+                onClick={() => navigate('/inventory')} 
                 variant="outline-secondary" 
                 className="w-100 fw-semibold"
               >

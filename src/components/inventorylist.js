@@ -1,19 +1,34 @@
-import React, { useContext, useEffect, useState } from 'react';
-import { authContext } from './pages/auth-context';
-import { Link, useSearchParams } from 'react-router-dom'; 
-import { Card, Container, Spinner, Alert, Table } from "react-bootstrap";
+import React, { useState, useEffect, useContext } from 'react';
+import { useSearchParams, Link } from 'react-router-dom';
+import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { db } from './firebase';
-import { collection, getDocs, query, where } from 'firebase/firestore';
-import { CiShop } from "react-icons/ci";
+import { authContext } from './pages/auth-context';
+import { Container, Spinner, Alert, Card, Table, Pagination } from 'react-bootstrap';
+
+import SearchBar from './searchBar';
+import TableRowItem from './tableRowItem';
 
 const ItemListView = () => {
   const [itemsList, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
   
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
   const { user } = useContext(authContext);
   const [searchParams] = useSearchParams();
+
   const activeCategory = searchParams.get('category');
+  const activeBrand = searchParams.get('brand');
+  const activeCollection = searchParams.get('collection');
+  const activeSupplier = searchParams.get('supplier')
+  const hasActiveClassification = activeCategory || activeBrand || activeCollection || activeSupplier;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, activeCategory, activeBrand, activeCollection, activeSupplier]);
 
   useEffect(() => {
     if (!user) {
@@ -29,6 +44,8 @@ const ItemListView = () => {
         const data = querySnapshot.docs.map(doc => ({
           ...doc.data(),
           id: doc.id,
+          quantity: doc.data().quantity !== undefined ? Number(doc.data().quantity) : 1,
+          inStock: doc.data().inStock !== false 
         }));
         setItems(data);
       } catch (err) {
@@ -42,129 +59,135 @@ const ItemListView = () => {
     fetchItems();
   }, [user]);
 
-  const displayedItems = activeCategory
-    ? itemsList.filter(item => item.type?.toLowerCase() === activeCategory.toLowerCase())
-    : itemsList;
+  const handleUpdateQuantity = async (itemId, currentQuantity, change) => {
+    const nextQuantity = Math.max(0, currentQuantity + change);
+    const calculatedStockStatus = nextQuantity > 0;
 
-  if (loading) {
-    return (
-      <Container className="text-center mt-5">
-        <Spinner animation="border" style={{ color: '#ff69b4' }} />
-        <p className="text-muted mt-2">Loading items...</p>
-      </Container>
-    );
-  }
+    try {
+      const itemDocRef = doc(db, "inventory", itemId);
+      await updateDoc(itemDocRef, { quantity: nextQuantity, inStock: calculatedStockStatus });
+      setItems(prev => prev.map(i => i.id === itemId ? { ...i, quantity: nextQuantity, inStock: calculatedStockStatus } : i));
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
-  if (error) {
-    return (
-      <Container className="mt-5">
-        <Alert variant="danger">{error}</Alert>
-      </Container>
+  const toggleStockStatus = async (itemId, currentStatus) => {
+  try {
+    const itemDocRef = doc(db, "inventory", itemId);
+    const nextStatus = !currentStatus;
+    
+    const matchingItem = itemsList.find(i => i.id === itemId);
+
+    let nextQuantity = matchingItem.quantity;
+    if (!nextStatus) {
+      nextQuantity = 0;
+    } else if (nextStatus && matchingItem.quantity === 0) {
+      nextQuantity = 1;
+    }
+    await updateDoc(itemDocRef, { 
+      inStock: nextStatus, 
+      quantity: nextQuantity 
+    });
+    setItems(prevItems => 
+      prevItems.map(item => 
+        item.id === itemId ? { ...item, inStock: nextStatus, quantity: nextQuantity } : item
+      )
     );
+  } catch (err) {
+    console.error("Failed to update stock status:", err);
   }
+};
+
+    const displayedItems = itemsList.filter(item => {
+    const matchesCategory = activeCategory ? item.type?.toLowerCase() === activeCategory.toLowerCase() : true;
+    const matchesBrand = activeBrand ? item.brand?.toLowerCase() === activeBrand.toLowerCase() : true;
+    const matchesCollection = activeCollection ? item.collection?.toLowerCase() === activeCollection.toLowerCase() : true;
+    const matchesSupplier = activeSupplier ? item.supplier?.toLowerCase() === activeSupplier.toLowerCase() : true;
+
+    return matchesCategory && matchesBrand && matchesCollection && matchesSupplier &&(
+      item.item?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.collection?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.supplier?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  });
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItemsSlice = displayedItems.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(displayedItems.length / itemsPerPage);
+
+  if (loading) return <Container className="text-center mt-5"><Spinner animation="border" style={{ color: '#ff69b4' }} /></Container>;
+  if (error) return <Container className="mt-5"><Alert variant="danger">{error}</Alert></Container>;
 
   return (
     <div className='body py-4'>
       <Container>
-        <h2 className="mb-4 text-center fw-bold" style={{ color: '#ff69b4' }}>
-          {activeCategory ? `${activeCategory} Inventory` : "Inventory Dashboard"}
+        <h2 className="mb-4 text-center fw-bold text-capitalize" style={{ color: '#ff69b4' }}>
+          {activeCategory || activeBrand || activeCollection || activeSupplier || "Inventory Dashboard"}
         </h2>
 
-        {activeCategory && (
+        {hasActiveClassification && (
           <div className="text-center mb-4">
-            <Link to="/" className="btn btn-sm btn-light border rounded-pill px-3 text-secondary text-decoration-none">
-              Clear Category Filter ✕
+            <Link to="/categories" className="btn btn-sm btn-light border rounded-pill px-3 text-secondary text-decoration-none shadow-sm">
+              ✕ Back to Categories Dashboard
             </Link>
           </div>
         )}
 
+        <SearchBar 
+          searchTerm={searchTerm} 
+          setSearchTerm={setSearchTerm} 
+          itemsPerPage={itemsPerPage} 
+          setItemsPerPage={setItemsPerPage} 
+          hasActiveClassification={hasActiveClassification} 
+        />
+
         {displayedItems.length === 0 ? (
-          <p className="text-center text-muted py-4">
-            {activeCategory ? `No items found matching "${activeCategory}".` : "Your inventory is empty."}
-          </p>
+          <p className="text-center text-muted py-5 card shadow-sm bg-white border-0">No items match your active search terms.</p>
         ) : (
-          /* Main Tabular Display Container Card */
-          <Card className="shadow-sm border-0 overflow-hidden">
-            <Table responsive hover className="align-middle mb-0 text-nowrap">
-              <thead className="bg-light">
-                <tr className="text-secondary small fw-bold">
-                  <th style={{ width: '120px' }}>Preview</th>
-                  <th>Item Details</th>
-                  <th className="text-center">Supplier Status</th>
-                  <th className="text-end" style={{ paddingRight: '20px' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {displayedItems.map((item) => (
-                  <tr key={item.id}>
-                    
-                    <td>
-                      <div 
-                        className="bg-light d-flex align-items-center justify-content-center border rounded overflow-hidden" 
-                        style={{ width: '80px', height: '80px' }}
-                      >
-                        {item.photoURL ? (
-                          <img 
-                            src={item.photoURL} 
-                            alt={item.item} 
-                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                          />
-                        ) : (
-                          <span style={{ fontSize: '1.5rem' }}>📦</span>
-                        )}
-                      </div>
-                    </td>
-
-                    <td>
-                      <h6 className="mb-1 fw-bold text-dark text-capitalize">
-                        {item.item || "Untitled Item"}
-                      </h6>
-                      <span className="badge rounded-pill" style={{ backgroundColor: '#fff0f5', color: '#ff69b4', fontWeight: '500' }}>
-                        {item.type || "No Category"}
-                      </span>
-                    </td>
-
-                    <td className="text-center">
-                      {item.supplierURL ? (
-                        <a 
-                          href={item.supplierURL} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          className="d-inline-flex align-items-center justify-content-center small text-decoration-none fw-bold px-3 py-2 rounded-pill shadow-sm"
-                          style={{ backgroundColor: '#fff0f5', color: '#ff69b4', border: '1px solid rgba(255, 105, 180, 0.2)' }}
-                        >
-                          <CiShop className="me-1" style={{ fontSize: '1.1rem' }} /> Visit Supplier ↗
-                        </a>
-                      ) : (
-                        <span className="text-muted small fst-italic">No Supplier Linked</span>
-                      )}
-                    </td>
-
-                    <td className="text-end" style={{ paddingRight: '20px' }}>
-                      <div className="d-inline-flex gap-2">
-                        <Link 
-                          to={`/${item.id}`} 
-                          className='btn btn-sm px-3 rounded-pill fw-semibold text-white'
-                          style={{ backgroundColor: '#ff69b4', borderColor: '#ff69b4' }}
-                        >
-                          View
-                        </Link>
-                        
-                        <Link to={`/edit/${item.id}`} className='btn btn-secondary btn-sm px-3 rounded-pill fw-semibold'>
-                          Edit
-                        </Link>
-                        
-                        <Link to={`/delete/${item.id}`} className='btn btn-outline-danger btn-sm px-3 rounded-pill fw-semibold'>
-                          Delete
-                        </Link>
-                      </div>
-                    </td>
-
+          <>
+            <Card className="shadow-sm border-0 overflow-hidden mb-4">
+              <Table responsive hover className="align-middle mb-0 text-nowrap">
+                <thead className="bg-light">
+                  <tr className="text-secondary small fw-bold">
+                    <th style={{ width: '120px', paddingLeft: '20px' }}>Preview</th>
+                    <th>Item Details</th>
+                    <th>Brand</th>
+                    <th className="text-center" style={{ width: '140px' }}>Quantity</th>
+                    <th className="text-center">Supplier Link</th>
                   </tr>
-                ))}
-              </tbody>
-            </Table>
-          </Card>
+                </thead>
+                <tbody>
+                  {currentItemsSlice.map((item) => (
+                    <TableRowItem 
+                      key={item.id} 
+                      item={item} 
+                      handleUpdateQuantity={handleUpdateQuantity} 
+                      toggleStockStatus={toggleStockStatus} 
+                    />
+                  ))}
+                </tbody>
+              </Table>
+            </Card>
+
+            {totalPages > 1 && (
+              <div className="d-flex justify-content-center">
+                <Pagination className="custom-pagination">
+                  <Pagination.Prev onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1} />
+                  {[...Array(totalPages)].map((_, idx) => (
+                    <Pagination.Item key={idx + 1} active={idx + 1 === currentPage} onClick={() => setCurrentPage(idx + 1)}>
+                      {idx + 1}
+                    </Pagination.Item>
+                  ))}
+                  <Pagination.Next onClick={() => setCurrentPage(prev => Math.max(1, Math.min(totalPages, prev + 1)))} disabled={currentPage === totalPages} />
+                </Pagination>
+              </div>
+            )}
+          </>
         )}
       </Container>
     </div>
@@ -172,3 +195,5 @@ const ItemListView = () => {
 };
 
 export default ItemListView;
+
+

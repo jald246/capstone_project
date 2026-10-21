@@ -5,6 +5,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import SignIn from './components/pages/signIn';
 import { authContext } from './components/pages/auth-context';
 
+import HomeView from './components/pages/Home';
 import ItemListView from './components/inventorylist';
 import NavBar from './components/temps/navbar';
 import CreateItem from './components/inventory/create';
@@ -46,7 +47,8 @@ function App() {
                   }}
                 >
                   <Routes>
-                    <Route path="/" element={<ItemListView />} />
+                    <Route path="/" element={<HomeView />} />
+                    <Route path="/inventory" element={<ItemListView />} />
                     <Route path="/categories" element={<CategoriesPage />} />
                     <Route path="/create" element={<CreateItem />} />
                     <Route path="/:id" element={<ItemView />} />

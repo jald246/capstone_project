@@ -6,6 +6,7 @@ import { FaHome } from "react-icons/fa";
 import { BiCategory } from "react-icons/bi";
 import { IoMdAddCircleOutline } from "react-icons/io";
 import { LuLogOut } from "react-icons/lu";
+import { MdOutlineInventory } from "react-icons/md";
 
 
 const NavBar = () => {
@@ -40,7 +41,10 @@ const NavBar = () => {
             )}
 
             <Nav.Link href='/'>
-              {isCollapsed ? <FaHome /> : <span className="nav-link-text">Return to Inventory List</span>}
+              {isCollapsed ? <FaHome /> : <span className="nav-link-text">Home</span>}
+            </Nav.Link>
+            <Nav.Link href='/inventory'>
+              {isCollapsed ? <MdOutlineInventory /> : <span className="nav-link-text">Inventory</span>}
             </Nav.Link>
             <Nav.Link href='/categories'>
               {isCollapsed ? <BiCategory /> : <span className="nav-link-text">Categories</span>}

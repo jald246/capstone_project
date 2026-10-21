@@ -31,3 +31,94 @@ textarea{
   background-color: rgb(56, 205, 165)
 }
 
+.badge.rounded-pill {
+  background-color: #fff0f5 !important;
+  color: #ff69b4 !important; 
+  border: 1px solid rgba(255, 105, 180, 0.2);
+}
+
+.table-light th {
+  background-color: #fafafa !important;
+  color: #6b7280 !important;
+  letter-spacing: 0.05em;
+}
+
+.table hover tbody tr:hover {
+  background-color: #fffafc !important;
+}
+
+.form-control:focus {
+  border-color: #ff69b4 !important;
+  box-shadow: 0 0 0 0.25rem rgba(255, 105, 180, 0.25) !important;
+}
+
+.nav-tabs .nav-link {
+  color: #6b7280 !important;
+  font-weight: 500;
+  border: none !important;
+  transition: color 0.2s ease;
+}
+
+.nav-tabs .nav-link:hover {
+  color: #ff69b4 !important;
+}
+
+.nav-tabs .nav-item.show .nav-link, 
+.nav-tabs .nav-link.active {
+  color: #ff69b4 !important;
+  background-color: transparent !important;
+  border-bottom: 2px solid #ff69b4 !important;
+  font-weight: 700;
+}
+.custom-pagination .page-link {
+  color: #ff69b4 !important;
+  background-color: #ffffff;
+  border: 1px solid #dee2e6;
+  padding: 8px 14px;
+  margin: 0 3px; 
+  border-radius: 6px !important;
+  transition: all 0.2s ease-in-out;
+}
+
+.custom-pagination .page-link:hover {
+  color: #e70676 !important;
+  background-color: #fff0f5;
+  border-color: #ff69b4;
+}
+
+.custom-pagination .page-item.active .page-link {
+  background-color: #ff69b4 !important;
+  border-color: #ff69b4 !important;
+  color: #ffffff !important;
+  font-weight: bold;
+  box-shadow: 0 4px 6px rgba(255, 105, 180, 0.2); 
+}
+
+.custom-pagination .page-item.disabled .page-link {
+  color: #9ca3af !important;
+  background-color: #f3f4f6;
+  border-color: #e5e7eb;
+  cursor: not-allowed;
+}
+
+.custom-stock-switch .form-check-input {
+  width: 3.5rem;
+  height: 1.75rem;
+  margin-top: 0.15rem;
+  padding: 10px;
+}
+
+.custom-stock-switch .form-check-input:checked {
+  background-color: #ff69b4;
+  border-color: #ff69b4;
+}
+
+.custom-stock-switch .form-check-input:focus {
+  border-color: #ff69b4;
+  box-shadow: 0 0 0 0.25rem rgba(163, 40, 167, 0.25);
+}
+
+.form-control::placeholder {
+  color:lightgray;
+  opacity: 1;
+}
